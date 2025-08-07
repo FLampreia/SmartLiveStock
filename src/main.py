@@ -1,7 +1,3 @@
-#pip install ultralytics
-#pip install opencv-python
-#pip install numpy==1.26.4
-
 import cv2 as cv2
 from ultralytics import YOLO
 import time
@@ -14,10 +10,10 @@ width = 640
 height = 480
 
 #download do algoritmo
-model = YOLO('yolo11n.pt')
+model = YOLO('../models/yolo11n.pt')
 #model = YOLO('yolo11s.pt')
 #model = YOLO('yolo11m.pt')
-#model = YOLO('yolo11x.pt')
+
 
 names = model.names
 
@@ -72,5 +68,3 @@ while True:
 
 cap.release()
 cv2.destroyAllWindows()
-
-
