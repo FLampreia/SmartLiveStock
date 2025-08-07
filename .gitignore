@@ -1,2 +1,5 @@
-/data/
-/models/
+/data/*
+!/data/.gitkeep
+
+/models/*
+!/models/.gitkeep
