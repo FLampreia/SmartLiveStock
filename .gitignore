@@ -3,3 +3,6 @@
 
 /models/*
 !/models/.gitkeep
+
+/Notes.txt
+
