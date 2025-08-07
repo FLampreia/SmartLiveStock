@@ -3,42 +3,47 @@ from ultralytics import YOLO
 import time
 
 # Load video
-cap = cv2.VideoCapture('../data/sheepHerd4.mp4')
+cap = cv2.VideoCapture('../data/sheepHerd4_1.mp4')
 
 # Object type to count
 count_type = "sheep"
 
 # Load YOLO model
-model = YOLO('../models/yolo11n.pt')
+model = YOLO('../models/yolo11s.pt')
 names = model.names  # e.g., {0: 'person', 1: 'sheep', ...}
 
 # Virtual line position (horizontal)
-line_y = 300
-
+line_y = 350
 # Tracking data
 unique_ids = set()
 prev_positions = {}
 sheep_count = 0
+prev_in_area = {}
+
+frame_index = 0
+
 
 while True:
     ret, frame = cap.read()
     if not ret:
         break
 
+    frame_index += 1
+    if frame_index % 2 != 0:
+        continue
+
     start_time = time.time()
 
     # Run detection and tracking
     result = model.track(frame, persist=True, verbose=False)
 
-    if result[0] is None or result[0].boxes.id is None:
-        annotated_frame = frame.copy()
-    else:
+    annotated_frame = frame.copy()
+
+    if result[0] is not None and result[0].boxes.id is not None:
         boxes = result[0].boxes
         xyxy = boxes.xyxy.cpu().tolist()
         ids = boxes.id.cpu().tolist()
         class_ids = boxes.cls.int().cpu().tolist()
-
-        annotated_frame = frame.copy()
 
         for box, track_id, class_id in zip(xyxy, ids, class_ids):
             class_name = names[class_id]
