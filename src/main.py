@@ -1,100 +1,92 @@
-import cv2 as cv2
+import cv2
 from ultralytics import YOLO
 import time
 
-
-# Open the camera (0 = default webcam)
-# cap = cv2.VideoCapture(0)
-# Alternatively, load a video file
+# Load video
 cap = cv2.VideoCapture('../data/sheepHerd4.mp4')
 
-# Set frame dimensions
-width = 640
-height = 480
-
-#Set Type
+# Object type to count
 count_type = "sheep"
 
-# Load the YOLO model
+# Load YOLO model
 model = YOLO('../models/yolo11n.pt')
+names = model.names  # e.g., {0: 'person', 1: 'sheep', ...}
 
-names = model.names  # Class names
+# Virtual line position (horizontal)
+line_y = 300
 
-# Dictionary to store unique objects by ID
-unique_objects = {}
-
-# Initialize previous time for FPS calculation
-prev_time = 0
+# Tracking data
+unique_ids = set()
+prev_positions = {}
+sheep_count = 0
 
 while True:
-    ret, frame = cap.read()  # Capture frame from the video/camera
+    ret, frame = cap.read()
     if not ret:
-        break  # If frame not read correctly, exit loop
+        break
 
-    # Start time for FPS measurement
     start_time = time.time()
 
-    # Run tracking using the YOLO model
+    # Run detection and tracking
     result = model.track(frame, persist=True, verbose=False)
 
-    # Skip frame if no detections or tracking IDs
     if result[0] is None or result[0].boxes.id is None:
-        continue
-
-    # Get all tracking data
-    boxes = result[0].boxes
-    track_ids = boxes.id.cpu().tolist()
-    class_ids = boxes.cls.int().cpu().tolist()
-
-    # Filter indices where class is 'sheep'
-    sheep_indices = [i for i, class_id in enumerate(class_ids) if names[class_id] == count_type]
-
-    # Save new unique sheep
-    for i in sheep_indices:
-        track_id = track_ids[i]
-        if track_id not in unique_objects:
-            unique_objects[track_id] = count_type
-
-    # Filter only sheep boxes
-    if sheep_indices:
-        # Create filtered boxes object
-        sheep_boxes = boxes[sheep_indices]
-        result[0].boxes = sheep_boxes
-
-        # Plot only sheep boxes
-        annotated_frame = result[0].plot()
+        annotated_frame = frame.copy()
     else:
+        boxes = result[0].boxes
+        xyxy = boxes.xyxy.cpu().tolist()
+        ids = boxes.id.cpu().tolist()
+        class_ids = boxes.cls.int().cpu().tolist()
+
         annotated_frame = frame.copy()
 
-    # FPS calculation
-    end_time = time.time()
-    fps = 1 / (end_time - start_time + 1e-5)
+        for box, track_id, class_id in zip(xyxy, ids, class_ids):
+            class_name = names[class_id]
 
-    # Show sheep count
-    cv2.putText(annotated_frame, f"Sheep Count: {len(unique_objects)}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2)
+            if class_name != count_type:
+                continue
 
-    # Show FPS
-    cv2.putText(annotated_frame, f"FPS: {fps:.0f}", (10, 70),
-                cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2)
+            # Bounding box coordinates
+            x1, y1, x2, y2 = map(int, box)
+            cx = int((x1 + x2) / 2)
+            cy = int((y1 + y2) / 2)
 
-    # Display result
+            # Check if sheep crossed the line (top to bottom)
+            if track_id in prev_positions:
+                prev_y = prev_positions[track_id]
+                if prev_y < line_y <= cy and track_id not in unique_ids:
+                    unique_ids.add(track_id)
+                    sheep_count += 1
+
+            # Update previous position
+            prev_positions[track_id] = cy
+
+            # Draw smaller, discreet bounding box and label
+            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 200, 0), 1)  # thin green box
+            cv2.circle(annotated_frame, (cx, cy), 2, (0, 200, 0), -1)  # center point
+            cv2.putText(annotated_frame, f'{class_name}', (x1, y1 - 5),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 200, 0), 1)
+
+    # Draw counting line (always visible)
+    cv2.line(annotated_frame, (0, line_y), (annotated_frame.shape[1], line_y), (0, 0, 255), 2)
+
+    # Calculate FPS
+    fps = 1 / (time.time() - start_time + 1e-5)
+
+    # Display sheep count
+    cv2.putText(annotated_frame, f"Sheep Count: {sheep_count}", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 255, 0), 2)
+
+    # Display FPS
+    cv2.putText(annotated_frame, f"FPS: {fps:.0f}", (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 0, 0), 2)
+
+    # Show result
     cv2.imshow('Result', annotated_frame)
 
-    # Press 'q' to exit the loop
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
 # Cleanup
 cap.release()
 cv2.destroyAllWindows()
-
-# # Mostrar os IDs e classes apenas no fim
-# print("\nResumo final - Objetos únicos detetados:")
-# for obj_id, class_name in unique_objects.items():
-#     print(f"ID: {obj_id} - Classe: {class_name}")
-#
-# # Contar quantos objetos são da classe "sheep"
-# num_sheep = sum(1 for class_name in unique_objects.values() if class_name == "sheep")
-# print(f"\nNº de objetos 'sheep': {num_sheep}")
-# print(f"Total de objetos únicos: {len(unique_objects)}")
