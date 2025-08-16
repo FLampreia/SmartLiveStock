@@ -6,6 +6,7 @@ import time
 
 # Load video
 cap = cv2.VideoCapture('../data/sheepHerd4_1.mp4')
+# cap = cv2.VideoCapture(0)
 
 width = 640
 height = 480
@@ -13,7 +14,7 @@ height = 480
 class_type = "sheep"  # Type of counting object
 
 # Load YOLO model
-model = YOLO('../models/yolo11s.pt')
+model = YOLO('../models/yolo11n.pt')
 model.to('cuda')
 names = model.names
 
@@ -69,7 +70,7 @@ while True:
                 if last_y < line_y <= cy and track_id not in unique_ids:
                     unique_ids.add(track_id)
                     sheep_count += 1
-                    print(f"Added: {track_id}")
+                    print(f"({sheep_count}) Added: {track_id}")
 
             # Updates Y position
             last_positions[track_id] = cy
@@ -80,10 +81,6 @@ while True:
             cv2.putText(annotated_frame, f'{class_name} {track_id}', (x1, y1 - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
-    # Show sheep counter
-    cv2.putText(annotated_frame, f"Sheep Count: {sheep_count}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
-
     # Increment frame counter
     frame_count += 1
 
@@ -93,7 +90,7 @@ while True:
     prev_time = curr_time
 
     # Show live FPS on frame
-    cv2.putText(annotated_frame, f"FPS: {live_fps:.0f}", (10, 60),
+    cv2.putText(annotated_frame, f"FPS: {live_fps:.0f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     # Show frames
