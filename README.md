@@ -13,7 +13,7 @@ pip install opencv-python
 pip install numpy==1.26.4
 ```
 
-> ⚠️ **Note:** The `numpy` version is fixed to ensure compatibility with the libraries used in this project.
+> **Note:** The `numpy` version is fixed to ensure compatibility with the libraries used in this project.
 
 
 ## Technologies Used
@@ -25,7 +25,7 @@ pip install numpy==1.26.4
 * NVIDIA Jetson Nano _not yet implemented_
 * Web Interface _not yet implemented_
 
-> 💡 **Tip:** For testing on a laptop with an NVIDIA GPU, make sure to activate CUDA to use GPU acceleration.
+> **Tip:** For testing on a laptop with an NVIDIA GPU, make sure to activate CUDA to use GPU acceleration.
 
 ```bash
 pip uninstall torch torchvision torchaudio
@@ -59,7 +59,9 @@ flowchart LR
 ```
 
 
-## Contributions
+[//]: # (## Contributions)
 
-Feel free to open issues, suggest improvements, or submit pull requests.
-Let’s build something useful together!
+[//]: # ()
+[//]: # (Feel free to open issues, suggest improvements, or submit pull requests.)
+
+[//]: # (Let’s build something useful together!)
