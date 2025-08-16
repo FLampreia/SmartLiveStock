@@ -2,6 +2,7 @@ import cv2 as cv2
 from ultralytics import YOLO
 import numpy as np
 import torch
+import time
 
 # Load video
 cap = cv2.VideoCapture('../data/sheepHerd4_1.mp4')
@@ -12,7 +13,7 @@ height = 480
 class_type = "sheep"  # Type of counting object
 
 # Load YOLO model
-model = YOLO('../models/yolo11m.pt')
+model = YOLO('../models/yolo11s.pt')
 model.to('cuda')
 names = model.names
 
@@ -22,7 +23,14 @@ last_positions = {}         # Last Y coordinate from each ID
 sheep_count = 0
 
 # Counting Line
-line_y = 2*height // 3
+line_y = 2 * height // 3
+
+
+# Initialize FPS calculation
+frame_count = 0
+start_time = time.time()
+prev_time = start_time
+
 
 while True:
     ret, frame = cap.read()
@@ -72,9 +80,21 @@ while True:
             cv2.putText(annotated_frame, f'{class_name} {track_id}', (x1, y1 - 5),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
-    # Shou sheep counter
+    # Show sheep counter
     cv2.putText(annotated_frame, f"Sheep Count: {sheep_count}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255, 0, 0), 2)
+
+    # Increment frame counter
+    frame_count += 1
+
+    # Calculate live FPS
+    curr_time = time.time()
+    live_fps = 1 / (curr_time - prev_time)
+    prev_time = curr_time
+
+    # Show live FPS on frame
+    cv2.putText(annotated_frame, f"FPS: {live_fps:.0f}", (10, 60),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
     # Show frames
     cv2.imshow('Camera', annotated_frame)
@@ -82,6 +102,13 @@ while True:
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
 
+# Calculate average FPS
+end_time = time.time()
+total_time = end_time - start_time
+average_fps = frame_count / total_time
+
+print(f"Total frames processed: {frame_count}")
+print(f"Average FPS: {average_fps:.2f}")
 print(sheep_count)
 print(unique_ids)
 
