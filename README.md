@@ -48,6 +48,17 @@ smartlivestock/
 └── README.md         # This file
 ```
 
+
+```mermaid
+flowchart LR
+    cam[Camera\nVideo Input] --> nano[Jetson Nano\nYOLOv11]
+    nano -->|JSON| api[API Flask/FastAPI\nData Reception]
+    api -->|storage| db[(SQL Database)]
+    db -->|History / Statistics| web[Web Interface\nReact Dashboard]
+    api -->|Real Time Data| web
+```
+
+
 ## Contributions
 
 Feel free to open issues, suggest improvements, or submit pull requests.
