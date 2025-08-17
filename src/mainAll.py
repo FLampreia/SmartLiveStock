@@ -13,7 +13,7 @@ width, height = 640, 480
 
 class_type = "sheep"  # Type of counting object
 model_path = '../models/yolo11n.pt'
-scan_type = "circle" #all, line, area
+scan_type = "all" #all, line, area
 
 valid_scan_types = ["all", "line", "area"]
 if scan_type not in valid_scan_types:
@@ -176,5 +176,5 @@ cv2.destroyAllWindows()
 # -----------------------------
 df, log_filename, model_name, timestamp = save_logs(log_data, model_path, scan_type)
 ids_filename = save_ids(unique_ids, model_path, scan_type, timestamp, model_name)
-# plot_filename = save_plot(df, model_name, scan_type, timestamp)
+plot_filename = save_plot(df, model_name, scan_type, timestamp)
 resume(df, frame_count, sheep_count)
