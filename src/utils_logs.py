@@ -46,13 +46,8 @@ def save_plot(df, model_name, scan_type, timestamp):
     plt.show()
     return plot_filename
 
-def resume(df, frame_count, sheep_count,
-           log_filename, ids_filename, plot_filename):
+def resume(df, frame_count, sheep_count,):
     """Show final resume on the terminal."""
-    print("\nFiles:")
-    print(f"Log saved in: {log_filename}")
-    print(f"IDs saved in: {ids_filename}")
-    print(f"Graph saved in: {plot_filename}")
 
     print("\nResume:")
     print(f"Total processed frames: {frame_count}")
