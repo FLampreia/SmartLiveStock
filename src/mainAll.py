@@ -1,6 +1,7 @@
 import cv2 as cv2
 from ultralytics import YOLO
 import time
+import numpy as np
 
 from utils_logs import save_logs, save_ids, save_plot, resume
 
@@ -12,7 +13,11 @@ width, height = 640, 480
 
 class_type = "sheep"  # Type of counting object
 model_path = '../models/yolo11n.pt'
-scan_type = "line"
+scan_type = "circle" #all, line, area
+
+valid_scan_types = ["all", "line", "area"]
+if scan_type not in valid_scan_types:
+    raise ValueError(f"Invalid scan_type: {scan_type}. Valid options are: {valid_scan_types}")
 
 # -----------------------------
 # Load YOLO model
@@ -32,6 +37,14 @@ next_id = 1   # Next sequential ID
 # Line scan
 last_positions = {}
 line_y = 2 * height // 3
+
+# Area scan
+roi_polygon = np.array([
+    [250, 130],
+    [470, 130],
+    [800, 400],
+    [70, 400]
+], np.int32)
 
 # -----------------------------
 # FPS
@@ -62,6 +75,9 @@ while True:
     # Draw line if scan_type = line
     if scan_type == "line":
         cv2.line(annotated_frame, (0, line_y), (width, line_y), (0, 0, 255), 2)
+
+    elif scan_type == "area":
+        cv2.polylines(annotated_frame, [roi_polygon], isClosed=True, color=(0, 255, 255), thickness=2)
 
     if result[0] is not None and result[0].boxes.id is not None:
         boxes = result[0].boxes
@@ -98,6 +114,13 @@ while True:
             elif scan_type == "line":
                 last_y = last_positions.get(track_id, cy)
                 if last_y < line_y <= cy and display_id not in unique_ids:
+                    unique_ids[display_id] = frame_count
+                    sheep_count += 1
+                    print(f"({sheep_count}) Added: {display_id}")
+
+            elif scan_type == "area":
+                inside = cv2.pointPolygonTest(roi_polygon, (cx, cy), False)
+                if inside >= 0 and display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
                     print(f"({sheep_count}) Added: {display_id}")
