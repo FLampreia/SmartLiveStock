@@ -41,10 +41,14 @@ Detect and count sheep in real time from a video feed using the YOLOv11 model fi
 ```
 smartlivestock/
 │
-├── models/           # YOLO model files and configs
+├── data/             # Testing videos
+├── models/           # YOLO model file
+├── results/          # Test results
+│   ├── ids/          # CSV files with sheep IDs
+│   ├── logs/         # CSV files with processing data
+│   └── plots/        # PNG with plots
 ├── src/              # Main source code (detection, counting, communication)
 ├── web/              # Web interface code
-├── data/             # Training data or test images
 └── README.md         # This file
 ```
 
