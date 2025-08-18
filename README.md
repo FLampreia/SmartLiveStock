@@ -3,6 +3,8 @@
 
 This project aims to detect and count sheep in real time using computer vision, supported by a graphical interface. The system uses AI models to recognize sheep in live video, processes the data on an embedded device, and displays the results through a web interface.
 
+---
+
 ## Requirements
 
 Before you start coding, make sure to install the following Python packages:
@@ -15,6 +17,7 @@ pip install numpy==1.26.4
 
 > **Note:** The `numpy` version is fixed to ensure compatibility with the libraries used in this project.
 
+---
 
 ## Technologies Used
 
@@ -31,6 +34,8 @@ pip install numpy==1.26.4
 pip uninstall torch torchvision torchaudio
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118
 ```
+
+---
 
 ## Project Goal
 
@@ -63,6 +68,23 @@ flowchart LR
     db -->|History / Statistics| web[Web Interface\nReact Dashboard]
     api -->|Real Time Data| web
 ```
+---
+## This Version
+
+
+### Sheep Counting with YOLO
+
+* **Video Input:** Reads all frames from a video file and resizes them for processing.
+* **YOLO Detection & Tracking:** Uses a pretrained YOLO model to detect sheep and assign unique tracking IDs.
+* **Counting Modes:**
+
+  * `all`: Counts every new sheep appearing in the video.
+  * `line`: Counts sheep crossing a predefined line.
+  * `area`: Counts sheep entering a predefined polygonal region.
+* **Sequential ID Mapping:** Converts YOLO’s tracking IDs to sequential IDs for easier tracking.
+* **Visualization:** Draws bounding boxes, centroids, IDs, and FPS on each frame for real-time visualization.
+* **Logging:** Stores frame-by-frame statistics including total sheep count, visible sheep, new sheep in the frame, and FPS.
+* **Output:** Saves logs and unique ID data for analysis.
 
 
 [//]: # (## Contributions)
