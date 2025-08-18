@@ -44,9 +44,11 @@ smartlivestock/
 ├── data/             # Testing videos
 ├── models/           # YOLO model file
 ├── results/          # Test results
+│   │
 │   ├── ids/          # CSV files with sheep IDs
 │   ├── logs/         # CSV files with processing data
 │   └── plots/        # PNG with plots
+│
 ├── src/              # Main source code (detection, counting, communication)
 ├── web/              # Web interface code
 └── README.md         # This file
