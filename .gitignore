@@ -13,5 +13,8 @@
 /results/ids/*
 !/results/ids/.gitkeep
 
+/results/videos/*
+!/results/videos/.gitkeep
+
 /Notes.txt
 
