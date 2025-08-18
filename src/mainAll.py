@@ -71,6 +71,7 @@ while True:
     annotated_frame = frame.copy()
 
     visible_sheep = 0  # Counts how many sheep appear on the frame
+    new_sheep_in_frame = 0 # Counts how many new sheep appear on the frame
 
     # Draw line if scan_type = line
     if scan_type == "line":
@@ -109,6 +110,7 @@ while True:
                 if display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
+                    new_sheep_in_frame += 1
                     print(f"New ID: {display_id}")
 
             elif scan_type == "line":
@@ -116,6 +118,7 @@ while True:
                 if last_y < line_y <= cy and display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
+                    new_sheep_in_frame += 1
                     print(f"({sheep_count}) Added: {display_id}")
 
             elif scan_type == "area":
@@ -123,6 +126,7 @@ while True:
                 if inside >= 0 and display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
+                    new_sheep_in_frame += 1
                     print(f"({sheep_count}) Added: {display_id}")
 
             last_positions[track_id] = cy # update last position
@@ -141,7 +145,7 @@ while True:
     frame_count += 1
     curr_time = time.time()
     live_fps = 1 / (curr_time - prev_time)
-    prev_time = curr_time
+
     cv2.putText(annotated_frame, f"FPS: {live_fps:.0f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
 
@@ -154,13 +158,18 @@ while True:
     # Logs data
     # -----------------------------
     elapsed_time = curr_time - start_time
+    time_since_last_frame = curr_time - prev_time
     log_data.append({
         "frame": frame_count,
-        "time": elapsed_time,
+        "total_time": round(elapsed_time, 2),
+        "time_since_last_frame": round(time_since_last_frame, 2),
         "sheep_visible": visible_sheep,
-        "sheep_count": sheep_count,
-        "fps": live_fps
+        "new_sheep_in_frame": new_sheep_in_frame,
+        "sheep_total_count": sheep_count,
+        "fps": round(live_fps, 2)
     })
+
+    prev_time = curr_time
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break
@@ -176,5 +185,5 @@ cv2.destroyAllWindows()
 # -----------------------------
 df, log_filename, model_name, timestamp = save_logs(log_data, model_path, scan_type)
 ids_filename = save_ids(unique_ids, model_path, scan_type, timestamp, model_name)
-plot_filename = save_plot(df, model_name, scan_type, timestamp)
+# plot_filename = save_plot(df, model_name, scan_type, timestamp)
 resume(df, frame_count, sheep_count)

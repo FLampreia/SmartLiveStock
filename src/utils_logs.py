@@ -15,7 +15,7 @@ def save_logs(log_data, model_type, scan_type):
     """Save logs in a CSV, returns filename and DataFrame."""
 
     model_name, timestamp, scan_type = create_names(model_type, scan_type)
-    log_filename = f"../logs/log_{scan_type}_{model_name}_{timestamp}.csv"
+    log_filename = f"../results/logs/log_{scan_type}_{model_name}_{timestamp}.csv"
     df = pd.DataFrame(log_data)
     df.to_csv(log_filename, index=False)
 
@@ -24,8 +24,8 @@ def save_logs(log_data, model_type, scan_type):
 def save_ids(unique_ids, model_type, scan_type, timestamp, model_name):
     """Save IDs in a CSV, returns filename."""
 
-    ids_filename = f"../ids/ids_{scan_type}_{model_name}_{timestamp}.csv"
-    ids_df = pd.DataFrame(list(unique_ids.items()), columns=["sheep_id", "frame"])
+    ids_filename = f"../results/ids/ids_{scan_type}_{model_name}_{timestamp}.csv"
+    ids_df = pd.DataFrame(list(unique_ids.items()), columns=["frame", "sheep_id"])
     ids_df.to_csv(ids_filename, index=False)
 
     return ids_filename
@@ -41,7 +41,7 @@ def save_plot(df, model_name, scan_type, timestamp):
     plt.legend()
     plt.title(f"Counting and performance evolution ({model_name})")
 
-    plot_filename = f"../plots/plot_{scan_type}_{model_name}_{timestamp}.png"
+    plot_filename = f"../results/plots/plot_{scan_type}_{model_name}_{timestamp}.png"
     plt.savefig(plot_filename)
     plt.show()
     return plot_filename

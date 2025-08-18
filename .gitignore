@@ -4,14 +4,14 @@
 /models/*
 !/models/.gitkeep
 
-/logs/*
-!/logs/.gitkeep
+/results/logs/*
+!/results/logs/.gitkeep
 
-/plots/*
-!/plots/.gitkeep
+/results/plots/*
+!/results/plots/.gitkeep
 
-/ids/*
-!/ids/.gitkeep
+/results/ids/*
+!/results/ids/.gitkeep
 
 /Notes.txt
 
