@@ -1,6 +1,7 @@
 import cv2 as cv2
 from ultralytics import YOLO
 import time
+from datetime import datetime
 import numpy as np
 
 from utils_logs import save_logs, save_ids, save_plot, resume
@@ -8,12 +9,17 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 # -----------------------------
 # Configurations
 # -----------------------------
-cap = cv2.VideoCapture('../data/sheepHerd1.mp4')
 width, height = 640, 480
-
 class_type = "sheep"  # Type of counting object
 model_path = '../models/yolo11n.pt'
 scan_type = "all" #all, line, area
+save_out = True
+
+cap = cv2.VideoCapture('../data/sheepHerd1.mp4')
+if save_out:
+    fps_video = round(cap.get(cv2.CAP_PROP_FPS),1)
+    fourcc = cv2.VideoWriter_fourcc(*"mp4v")
+    out = cv2.VideoWriter(f'../results/videos/video_{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.mp4', fourcc, fps_video, (width, height))
 
 valid_scan_types = ["all", "line", "area"]
 if scan_type not in valid_scan_types:
@@ -153,6 +159,8 @@ while True:
     # Display
     # -----------------------------
     cv2.imshow('Camera', annotated_frame)
+    if save_out:
+        out.write(annotated_frame)
 
     # -----------------------------
     # Logs data
@@ -178,6 +186,8 @@ while True:
 # Close
 # -----------------------------
 cap.release()
+if save_out:
+    out.release()
 cv2.destroyAllWindows()
 
 # -----------------------------
