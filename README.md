@@ -1,4 +1,3 @@
-
 # SmartLiveStock – Real-Time Sheep Counting
 
 This project aims to detect and count sheep in real time using computer vision, supported by a graphical interface. The system uses AI models to recognize sheep in live video, processes the data on an embedded device, and displays the results through a web interface.
