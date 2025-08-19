@@ -12,18 +12,20 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 width, height = 640, 480
 class_type = "sheep"  # Type of counting object
 model_path = '../models/yolo11n.pt'
-scan_type = "all" #all, line, area
-save_out = True
+scan_type = "area" #all, line, area
 
-cap = cv2.VideoCapture('../data/sheepHerd1.mp4')
-if save_out:
-    fps_video = round(cap.get(cv2.CAP_PROP_FPS),1)
+flag_save_video = False
+flag_save_logs = False
+flag_save_ids = False   # To save ids, logs need to be "true"
+flag_save_plot = False  # To save plots, logs need to be "true"
+
+cap = cv2.VideoCapture('../data/sheepHerd1.mp4') # 0 to camera (30 fps)
+fps_video = round(cap.get(cv2.CAP_PROP_FPS), 1)
+print(fps_video)
+
+if flag_save_video:
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(f'../results/videos/video_{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.mp4', fourcc, fps_video, (width, height))
-
-valid_scan_types = ["all", "line", "area"]
-if scan_type not in valid_scan_types:
-    raise ValueError(f"Invalid scan_type: {scan_type}. Valid options are: {valid_scan_types}")
 
 # -----------------------------
 # Load YOLO model
@@ -40,17 +42,23 @@ sheep_count = 0
 id_map = {}   # Maps YOLO IDs to Sequential IDs
 next_id = 1   # Next sequential ID
 
-# Line scan
+# -----------------------------
+# Structures
+# -----------------------------
 last_positions = {}
-line_y = 2 * height // 3
+roi_polygon = None
 
+# Line scan
+if scan_type == "line":
+    line_y = 2 * height // 3
 # Area scan
-roi_polygon = np.array([
-    [250, 130],
-    [470, 130],
-    [800, 400],
-    [70, 400]
-], np.int32)
+elif scan_type == "area":
+    roi_polygon = np.array([
+        [250, 130],
+        [470, 130],
+        [800, 400],
+        [70, 400]
+    ], np.int32)
 
 # -----------------------------
 # FPS
@@ -58,6 +66,7 @@ roi_polygon = np.array([
 frame_count = 0
 start_time = time.time()
 prev_time = start_time
+fps_values = []
 
 # -----------------------------
 # Logs
@@ -120,12 +129,14 @@ while True:
                     print(f"New ID: {display_id}")
 
             elif scan_type == "line":
+                # FIXME sheep_id on the IDs file is using the unique_id not the display_id
                 last_y = last_positions.get(track_id, cy)
                 if last_y < line_y <= cy and display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
                     new_sheep_in_frame += 1
                     print(f"({sheep_count}) Added: {display_id}")
+                last_positions[track_id] = cy  # update last position
 
             elif scan_type == "area":
                 inside = cv2.pointPolygonTest(roi_polygon, (cx, cy), False)
@@ -134,8 +145,6 @@ while True:
                     sheep_count += 1
                     new_sheep_in_frame += 1
                     print(f"({sheep_count}) Added: {display_id}")
-
-            last_positions[track_id] = cy # update last position
 
             # -----------------------------
             # Drawing bounding boxes
@@ -151,6 +160,7 @@ while True:
     frame_count += 1
     curr_time = time.time()
     live_fps = 1 / (curr_time - prev_time)
+    fps_values.append(live_fps)
 
     cv2.putText(annotated_frame, f"FPS: {live_fps:.0f}", (10, 30),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2)
@@ -159,23 +169,24 @@ while True:
     # Display
     # -----------------------------
     cv2.imshow('Camera', annotated_frame)
-    if save_out:
+    if flag_save_video:
         out.write(annotated_frame)
 
     # -----------------------------
     # Logs data
     # -----------------------------
-    elapsed_time = curr_time - start_time
-    time_since_last_frame = curr_time - prev_time
-    log_data.append({
-        "frame": frame_count,
-        "total_time": round(elapsed_time, 2),
-        "time_since_last_frame": round(time_since_last_frame, 2),
-        "sheep_visible": visible_sheep,
-        "new_sheep_in_frame": new_sheep_in_frame,
-        "sheep_total_count": sheep_count,
-        "fps": round(live_fps, 2)
-    })
+    if flag_save_logs:
+        elapsed_time = curr_time - start_time
+        time_since_last_frame = curr_time - prev_time
+        log_data.append({
+            "frame": frame_count,
+            "total_time": round(elapsed_time, 2),
+            "time_since_last_frame": round(time_since_last_frame, 2),
+            "sheep_visible": visible_sheep,
+            "new_sheep_in_frame": new_sheep_in_frame,
+            "sheep_total_count": sheep_count,
+            "fps": round(live_fps, 2)
+        })
 
     prev_time = curr_time
 
@@ -186,14 +197,20 @@ while True:
 # Close
 # -----------------------------
 cap.release()
-if save_out:
+if flag_save_video:
     out.release()
 cv2.destroyAllWindows()
 
 # -----------------------------
 # Save Logs
 # -----------------------------
-df, log_filename, model_name, timestamp = save_logs(log_data, model_path, scan_type)
-ids_filename = save_ids(unique_ids, model_path, scan_type, timestamp, model_name)
-# plot_filename = save_plot(df, model_name, scan_type, timestamp)
-resume(df, frame_count, sheep_count)
+if flag_save_logs:
+    df, log_filename, model_name, timestamp = save_logs(log_data, model_path, scan_type)
+    if flag_save_ids:
+        ids_filename = save_ids(unique_ids, model_path, scan_type, timestamp, model_name)
+    if flag_save_plot:
+        plot_filename = save_plot(df, model_name, scan_type, timestamp)
+    resume(df, frame_count, sheep_count)
+else:
+    print(f"Process finished. Total sheep counted: {sheep_count}")
+    print(f"Average FPS: {np.mean(fps_values) if fps_values else 0:.2f}")
