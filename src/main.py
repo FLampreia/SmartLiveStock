@@ -8,7 +8,7 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 # -----------------------------
 # Configurations
 # -----------------------------
-cap = cv2.VideoCapture('../data/sheepHerd4_1.mp4')
+cap = cv2.VideoCapture('../data/sheepHerd1.mp4')
 width, height = 640, 480
 
 class_type = "sheep"  # Type of counting object
