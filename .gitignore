@@ -13,4 +13,6 @@
 /results/videos/*
 !/results/videos/.gitkeep
 
-Notes.md
+__pycache__/
+
+venv/
