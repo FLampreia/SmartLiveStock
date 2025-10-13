@@ -1,5 +1,5 @@
-/jetson_nano/detection/models/*
-!/jetson_nano/detection/models/.gitkeep
+/jetson_nano/models/*
+!/jetson_nano/models/.gitkeep
 
 /tests/results/logs/*
 !/tests/results/logs/.gitkeep

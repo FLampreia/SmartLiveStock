@@ -12,7 +12,7 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 # width, height = 640, 480
 # class_type = "sheep"  # Type of counting object
 # model_path = '../detection/models/yolo11n.pt'
-scan_type = "all" #all, line, area
+scan_type = "all" #all, area
 # confidence_threshold = 0.82
 
 
@@ -52,9 +52,7 @@ next_id = 1   # Next sequential ID
 last_positions = {}
 roi_polygon = None
 
-# Line scan
-if scan_type == "line":
-    line_y = 2 * height // 3
+
 # Area scan
 elif scan_type == "area":
     roi_polygon = np.array([
@@ -92,11 +90,7 @@ while True:
     visible_sheep = 0  # Counts how many sheep appear on the frame
     new_sheep_in_frame = 0 # Counts how many new sheep appear on the frame
 
-    # Draw line if scan_type = line
-    if scan_type == "line":
-        cv2.line(annotated_frame, (0, line_y), (width, line_y), (0, 0, 255), 2)
-
-    elif scan_type == "area":
+    if scan_type == "area":
         cv2.polylines(annotated_frame, [roi_polygon], isClosed=True, color=(0, 255, 255), thickness=2)
 
     if result[0] is not None and result[0].boxes.id is not None:
@@ -132,16 +126,6 @@ while True:
                     sheep_count += 1
                     new_sheep_in_frame += 1
                     print(f"({sheep_count}) New ID: {display_id} | Confiança: {conf:.2f}")
-
-            elif scan_type == "line":
-                # FIXME sheep_id on the IDs file is using the unique_id not the display_id
-                last_y = last_positions.get(track_id, cy)
-                if last_y < line_y <= cy and display_id not in unique_ids:
-                    unique_ids[display_id] = frame_count
-                    sheep_count += 1
-                    new_sheep_in_frame += 1
-                    print(f"({sheep_count}) Added: {display_id}")
-                last_positions[track_id] = cy  # update last position
 
             elif scan_type == "area":
                 inside = cv2.pointPolygonTest(roi_polygon, (cx, cy), False)
