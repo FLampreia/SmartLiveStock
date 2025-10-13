@@ -9,23 +9,27 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 # -----------------------------
 # Configurations
 # -----------------------------
-width, height = 640, 480
-class_type = "sheep"  # Type of counting object
-model_path = '../models/yolo11n.pt'
-scan_type = "area" #all, line, area
+# width, height = 640, 480
+# class_type = "sheep"  # Type of counting object
+# model_path = '../detection/models/yolo11n.pt'
+scan_type = "all" #all, line, area
+# confidence_threshold = 0.82
+
 
 flag_save_video = False
 flag_save_logs = False
 flag_save_ids = False   # To save ids, logs need to be "true"
 flag_save_plot = False  # To save plots, logs need to be "true"
 
-cap = cv2.VideoCapture('../data/sheepHerd1.mp4') # 0 to camera (30 fps)
+cap = cv2.VideoCapture('../../tests/data/sheepHerd1.mp4') # 0 to camera (30 fps)
 fps_video = round(cap.get(cv2.CAP_PROP_FPS), 1)
 print(fps_video)
 
 if flag_save_video:
     fourcc = cv2.VideoWriter_fourcc(*"mp4v")
     out = cv2.VideoWriter(f'../results/videos/video_{datetime.now().strftime("%d-%m-%Y_%H-%M-%S")}.mp4', fourcc, fps_video, (width, height))
+
+delay = int(1000 / (fps_video / 2))
 
 # -----------------------------
 # Load YOLO model
@@ -100,8 +104,9 @@ while True:
         xyxy = boxes.xyxy.cpu().tolist()
         ids = boxes.id.cpu().tolist()
         class_ids = boxes.cls.int().cpu().tolist()
+        confs = boxes.conf.cpu().tolist()
 
-        for box, track_id, class_id in zip(xyxy, ids, class_ids):
+        for box, track_id, class_id, conf in zip(xyxy, ids, class_ids, confs):
             class_name = names[class_id]
             if class_name != class_type:
                 continue
@@ -121,12 +126,12 @@ while True:
             # -----------------------------
             # Counting
             # -----------------------------
-            if scan_type == "all":
+            if scan_type == "all" and conf >= confidence_threshold:
                 if display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
                     new_sheep_in_frame += 1
-                    print(f"New ID: {display_id}")
+                    print(f"({sheep_count}) New ID: {display_id} | Confiança: {conf:.2f}")
 
             elif scan_type == "line":
                 # FIXME sheep_id on the IDs file is using the unique_id not the display_id
@@ -149,10 +154,16 @@ while True:
             # -----------------------------
             # Drawing bounding boxes
             # -----------------------------
-            cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
-            cv2.circle(annotated_frame, (cx, cy), 2, (255, 0, 0), -1)
-            cv2.putText(annotated_frame, f'{class_name} {display_id}', (x1, y1 - 5),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+            if conf >= confidence_threshold:
+                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (0, 255, 0), 1)
+                cv2.circle(annotated_frame, (cx, cy), 2, (255, 0, 0), -1)
+                cv2.putText(annotated_frame, f'{class_name} {display_id}', (x1, y1 - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
+            else:
+                cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), (255, 0, 0), 1)
+                cv2.circle(annotated_frame, (cx, cy), 2, (255, 0, 0), -1)
+                cv2.putText(annotated_frame, f'{class_name} {display_id}', (x1, y1 - 5),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.4, (255, 0, 0), 1)
 
     # -----------------------------
     # FPS
@@ -189,6 +200,7 @@ while True:
         })
 
     prev_time = curr_time
+
 
     if cv2.waitKey(1) & 0xFF == ord('q'):
         break

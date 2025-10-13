@@ -5,9 +5,9 @@ import numpy as np
 
 
 width, height = 640, 480
-video = '/home/lampreia/Projects/SmartLiveStock/data/sheepHerd1.mp4'
+video = '/home/jetson/Projects/SmartLiveStock/data/sheepHerd1.mp4'
 url = 'rtsp://Raspberry:projetorasppi5@192.168.1.113:554/stream1'
-cap = cv2.VideoCapture(url) # 0 to camera (30 fps)
+cap = cv2.VideoCapture(video) # 0 to camera (30 fps)
 fps_video = round(cap.get(cv2.CAP_PROP_FPS), 1)
 print(fps_video)
 

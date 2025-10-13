@@ -1,0 +1,10 @@
+resize:
+  width: 640
+  height: 480
+detection:
+  model_path: '../detection/models/yolo11n.pt'
+  conf_threshold: 0.82
+  class_type: 'sheep'
+runtime:
+  save_frames: true
+  websocket_host: "192.168.1.10" #exemplo

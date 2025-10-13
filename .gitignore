@@ -1,16 +1,16 @@
-/models/*
-!/models/.gitkeep
+/jetson_nano/detection/models/*
+!/jetson_nano/detection/models/.gitkeep
 
-/results/logs/*
-!/results/logs/.gitkeep
+/tests/results/logs/*
+!/tests/results/logs/.gitkeep
 
-/results/plots/*
-!/results/plots/.gitkeep
+/tests/results/plots/*
+!/tests/results/plots/.gitkeep
 
-/results/ids/*
-!/results/ids/.gitkeep
+/tests/results/ids/*
+!/tests/results/ids/.gitkeep
 
-/results/videos/*
-!/results/videos/.gitkeep
+/tests/results/videos/*
+!/tests/results/videos/.gitkeep
 
 Notes.md
