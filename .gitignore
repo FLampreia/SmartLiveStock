@@ -13,4 +13,8 @@
 /tests/results/videos/*
 !/tests/results/videos/.gitkeep
 
-Notes.md
+__pycache__/
+
+venv/
+
+.idea/
