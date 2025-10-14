@@ -1,9 +1,11 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, WebSocket
+from fastapi.responses import HTMLResponse
 import sqlite3
-
+import base64
+import cv2 as cv2
 app = FastAPI()
 
-DB_PATH = "web/smartlivestock.db"
+DB_PATH = "server/smartlivestock.db"
 
 
 @app.get("/")
