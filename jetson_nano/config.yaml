@@ -3,9 +3,6 @@ resize:
   height: 480
 detection:
   camera_path: '../tests/data/sheepHerd1.mp4'
-  model_path: '../models/yolo11n.pt'
+  model_path: 'models/yolo11n.pt'
   conf_threshold: 0.82
   class_type: 'sheep'
-runtime:
-  save_frames: true
-  websocket_host: "192.168.1.10" #exemplo

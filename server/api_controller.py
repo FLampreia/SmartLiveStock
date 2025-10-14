@@ -48,4 +48,4 @@ def listar_ovelhas():
 
 @app.get("/api/count")
 def get_count():
-    return {"sheep_count": 50}
+    return {"sheep_count": 42}
