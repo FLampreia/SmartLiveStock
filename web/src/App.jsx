@@ -1,9 +1,10 @@
-// web/src/App.jsx
 import { useEffect, useState } from 'react';
 
 function App() {
   const [sheepCount, setSheepCount] = useState(0);
   const API_URL = import.meta.env.VITE_API_URL; // lê do .env
+
+  console.log("API_URL:", API_URL);
 
   useEffect(() => {
     async function fetchCount() {
@@ -12,7 +13,7 @@ function App() {
         const data = await response.json();
         setSheepCount(data.sheep_count);
       } catch (err) {
-        console.error(err);
+        console.error("Erro ao buscar contagem:", err);
       }
     }
 

@@ -1,16 +1,17 @@
-from fastapi import FastAPI, WebSocket
+from fastapi import FastAPI #, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse
+# from fastapi.responses import HTMLResponse
 import sqlite3
 import os
 from dotenv import load_dotenv
-import base64
-import cv2 as cv2
+# import base64
+# import cv2 as cv2
 
 load_dotenv()
 
 origins = os.getenv("FRONTEND_ORIGINS", "").split(",")
-
+# origins = [o.strip() for o in origins if o.strip()]
+# print(origins)
 app = FastAPI()
 
 
@@ -47,4 +48,4 @@ def listar_ovelhas():
 
 @app.get("/api/count")
 def get_count():
-    return {"sheep_count": 42}
+    return {"sheep_count": 50}
