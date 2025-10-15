@@ -1,5 +1,6 @@
-from fastapi import FastAPI #, WebSocket
+from fastapi import FastAPI, HTTPException #, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
+import requests
 # from fastapi.responses import HTMLResponse
 import sqlite3
 import os
@@ -10,8 +11,10 @@ from dotenv import load_dotenv
 load_dotenv()
 
 origins = os.getenv("FRONTEND_ORIGINS", "").split(",")
+jetson = os.getenv("JETSON_ORIGIN","")
 # origins = [o.strip() for o in origins if o.strip()]
 # print(origins)
+# print(jetson)
 app = FastAPI()
 
 
@@ -49,3 +52,14 @@ def listar_ovelhas():
 @app.get("/api/count")
 def get_count():
     return {"sheep_count": 42}
+
+@app.get("/jetson/command")
+def send_command_to_jetson(action: str, params: dict | None = None):
+    try:
+        url = f"{jetson}/command"
+        response = requests.post(url, json={"action": action, "params": params or {}})
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Erro a comunicar com o Jetson: {e}")
+

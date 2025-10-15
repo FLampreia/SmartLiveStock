@@ -20,3 +20,5 @@ __pycache__/
 .idea/
 
 .env
+
+jetson_nano/src
