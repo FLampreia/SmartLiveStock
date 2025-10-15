@@ -17,7 +17,6 @@ jetson = os.getenv("JETSON_ORIGIN","")
 # print(jetson)
 app = FastAPI()
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,

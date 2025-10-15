@@ -9,11 +9,11 @@ from utils_logs import save_logs, save_ids, save_plot, resume
 # -----------------------------
 # Configurations
 # -----------------------------
-# width, height = 640, 480
-# class_type = "sheep"  # Type of counting object
-# model_path = '../detection/models/yolo11n.pt'
+width, height = 640, 480
+class_type = "sheep"  # Type of counting object
+model_path = '../models/yolo11n.pt'
 scan_type = "all" #all, area
-# confidence_threshold = 0.82
+confidence_threshold = 0.82
 
 
 flag_save_video = False
@@ -53,15 +53,6 @@ last_positions = {}
 roi_polygon = None
 
 
-# Area scan
-elif scan_type == "area":
-    roi_polygon = np.array([
-        [250, 130],
-        [470, 130],
-        [800, 400],
-        [70, 400]
-    ], np.int32)
-
 # -----------------------------
 # FPS
 # -----------------------------
@@ -90,9 +81,6 @@ while True:
     visible_sheep = 0  # Counts how many sheep appear on the frame
     new_sheep_in_frame = 0 # Counts how many new sheep appear on the frame
 
-    if scan_type == "area":
-        cv2.polylines(annotated_frame, [roi_polygon], isClosed=True, color=(0, 255, 255), thickness=2)
-
     if result[0] is not None and result[0].boxes.id is not None:
         boxes = result[0].boxes
         xyxy = boxes.xyxy.cpu().tolist()
@@ -120,20 +108,13 @@ while True:
             # -----------------------------
             # Counting
             # -----------------------------
-            if scan_type == "all" and conf >= confidence_threshold:
+            if conf >= confidence_threshold:
                 if display_id not in unique_ids:
                     unique_ids[display_id] = frame_count
                     sheep_count += 1
                     new_sheep_in_frame += 1
                     print(f"({sheep_count}) New ID: {display_id} | Confiança: {conf:.2f}")
 
-            elif scan_type == "area":
-                inside = cv2.pointPolygonTest(roi_polygon, (cx, cy), False)
-                if inside >= 0 and display_id not in unique_ids:
-                    unique_ids[display_id] = frame_count
-                    sheep_count += 1
-                    new_sheep_in_frame += 1
-                    print(f"({sheep_count}) Added: {display_id}")
 
             # -----------------------------
             # Drawing bounding boxes
