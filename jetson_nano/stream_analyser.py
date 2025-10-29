@@ -55,4 +55,3 @@ cap.release()
 cv2.destroyAllWindows()
 
 print(f"Process finished. Total sheep counted: {sheep_count}")
-# print(f"Average FPS: {np.mean(fps_values) if fps_values else 0:.2f}")

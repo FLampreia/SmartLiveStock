@@ -1,12 +1,13 @@
-from fastapi import FastAPI, HTTPException #, WebSocket
+from fastapi import FastAPI, HTTPException, WebSocket
 from fastapi.middleware.cors import CORSMiddleware
 import requests
 # from fastapi.responses import HTMLResponse
 import sqlite3
 import os
 from dotenv import load_dotenv
-# import base64
-# import cv2 as cv2
+import base64
+import cv2 as cv2
+import numpy as np
 
 load_dotenv()
 
@@ -62,3 +63,31 @@ def send_command_to_jetson(action: str, params: dict | None = None):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Erro a comunicar com o Jetson: {e}")
 
+
+@app.websocket("/ws/jetson")
+async def jetson_stream(ws: WebSocket):
+    await ws.accept()
+    print("Jetson conectado ao servidor central")
+
+    try:
+        while True:
+            data = await ws.receive_json()
+            frame_b64 = data.get("data")
+            count = data.get("count")
+
+            # Decodifica o frame recebido
+            frame_bytes = base64.b64decode(frame_b64)
+            np_frame = np.frombuffer(frame_bytes, np.uint8)
+            frame = cv2.imdecode(np_frame, cv2.IMREAD_COLOR)
+
+            # Aqui podes exibir, armazenar ou retransmitir o frame
+            cv2.imshow("Stream Jetson", frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+
+            print(f"Ovelhas: {count}")
+
+    except Exception as e:
+        print("Conexão WebSocket encerrada:", e)
+    finally:
+        await ws.close()
