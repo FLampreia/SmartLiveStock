@@ -1,17 +1,6 @@
 /jetson_nano/models/*
 !/jetson_nano/models/.gitkeep
 
-/tests/results/logs/*
-!/tests/results/logs/.gitkeep
-
-/tests/results/plots/*
-!/tests/results/plots/.gitkeep
-
-/tests/results/ids/*
-!/tests/results/ids/.gitkeep
-
-/tests/results/videos/*
-!/tests/results/videos/.gitkeep
 
 __pycache__/
 
