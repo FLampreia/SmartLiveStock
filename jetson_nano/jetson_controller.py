@@ -5,6 +5,8 @@ import asyncio
 import numpy as np
 from ultralytics import YOLO
 
+SHOW_LOCAL = True
+
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 CLASS_TYPE = "sheep"
@@ -12,9 +14,9 @@ CONF_THRESHOLD = 0.80
 MODEL_PATH = "jetson_nano/models/yolo11n.pt"
 
 app = FastAPI()
-
 model = YOLO(MODEL_PATH)
 model.to('cuda')
+
 sheep_count = 0
 tracked_ids = set()
 
@@ -45,20 +47,23 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
 
             frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
             mask = np.ones((FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8) * 255 #TODO multiplica por 255 para colocar inicialmente todo o frame como mask
+            annotated_frame = frame.copy()
 
             # Se há área definida, desenhar
             if area_points:
+                # print("Área recebida:", area_points)
+
                 mask = np.zeros((FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
                 pts = np.array(area_points, np.int32)
                 hull = cv2.convexHull(pts)
 
                 # desenhar contorno visível
-                cv2.polylines(frame, [hull], isClosed=True, color=(255, 255, 0), thickness=2)
+                cv2.polylines(annotated_frame, [hull], isClosed=True, color=(255, 255, 0), thickness=2)
 
                 # preencher área dentro do polígono
                 cv2.fillPoly(mask, [hull], 255)
 
-            annotated_frame = frame.copy()
+
 
             # Executar deteção e tracking
             if msg_detect:
@@ -96,13 +101,14 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                         cv2.putText(annotated_frame, f"{class_name} #{track_id}",
                                     (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
 
-            # Mostrar frame localmente
-            cv2.imshow("SmartLiveStock Stream", annotated_frame)
+            if SHOW_LOCAL:
+                # Mostrar frame localmente
+                cv2.imshow("SmartLiveStock Stream", annotated_frame)
 
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                stop_event.set()
-                print("Transmissão interrompida localmente com 'q'.")
-                break
+                if cv2.waitKey(1) & 0xFF == ord('q'):
+                    stop_event.set()
+                    print("Transmissão interrompida localmente com 'q'.")
+                    break
 
             # Enviar frame via WebSocket
             _, buffer = cv2.imencode(".jpg", annotated_frame)
@@ -118,16 +124,17 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
     finally:
         capture.release()
         cv2.destroyAllWindows()
-        print("Transmissão de frames terminada e janela fechada.")
+        print("Transmissão encerrada e janela fechada.")
 
 
 # ==============================================================
-# Endpoint WebSocket
+# Endpoint WebSocket — duas tarefas independentes
 # ==============================================================
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
     print("Servidor conectado ao WebSocket.")
+
     capture = None
     stop_event = asyncio.Event()
     frame_task = None
@@ -189,6 +196,9 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception as e:
         print("Erro na conexão:", e)
         stop_event.set()
+        if frame_task:
+            await frame_task
         if capture:
             capture.release()
         cv2.destroyAllWindows()
+        print("Conexão WebSocket encerrada.")
