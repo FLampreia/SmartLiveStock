@@ -1,34 +1,49 @@
+import cv2, json, asyncio, numpy as np, base64
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
-import cv2
-import json
-import asyncio
-import numpy as np
 from ultralytics import YOLO
+from datetime import datetime
 
+# ==============================================================
+# Configs
+# ==============================================================
 SHOW_LOCAL = True
-
 FRAME_WIDTH = 640
 FRAME_HEIGHT = 480
 CLASS_TYPE = "sheep"
-CONF_THRESHOLD = 0.80
+CONF_THRESHOLD = 0.88
 MODEL_PATH = "jetson_nano/models/yolo11n.pt"
 
 app = FastAPI()
-model = YOLO(MODEL_PATH)
-model.to('cuda')
 
+# ==============================================================
+# Model Loading
+# ==============================================================
+model = YOLO(MODEL_PATH).to('cuda')
+
+# ==============================================================
+# Variables
+# ==============================================================
+
+# Shared state variables
+shared_state = {
+    "camera": None,
+    "area": None,
+    "detect": None
+}
+
+# Global variables
 sheep_count = 0
 tracked_ids = set()
+flag_new_detections = False
 
 
 # ==============================================================
 # Função de streaming com deteção e área
 # ==============================================================
-async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_event: asyncio.Event,
-                        area_points=None, msg_detect=None):
-    global sheep_count, tracked_ids
-
+async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_event: asyncio.Event, shared_state):
+    global sheep_count, tracked_ids, flag_new_detections
     sheep_count = 0
+    flag_new_detections = False
     tracked_ids.clear()
 
     try:
@@ -46,15 +61,17 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                 break
 
             frame = cv2.resize(frame, (FRAME_WIDTH, FRAME_HEIGHT))
-            mask = np.ones((FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8) * 255 #TODO multiplica por 255 para colocar inicialmente todo o frame como mask
             annotated_frame = frame.copy()
 
-            # Se há área definida, desenhar
-            if area_points:
-                # print("Área recebida:", area_points)
+            sh_area_points = shared_state.get("area")
+            sh_detect_enabled = shared_state.get("detect")
 
+            # Se há área definida, desenhar
+            mask = np.ones((FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8) * 255 #TODO multiplica por 255 para colocar inicialmente todo o frame como mask
+            if sh_area_points:
+                # print("Área recebida:", area_points)
                 mask = np.zeros((FRAME_HEIGHT, FRAME_WIDTH), dtype=np.uint8)
-                pts = np.array(area_points, np.int32)
+                pts = np.array(sh_area_points, np.int32)
                 hull = cv2.convexHull(pts)
 
                 # desenhar contorno visível
@@ -64,9 +81,9 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                 cv2.fillPoly(mask, [hull], 255)
 
 
-
             # Executar deteção e tracking
-            if msg_detect:
+            # new_detections = []
+            if sh_detect_enabled: #modo detetar ativo
                 result = model.track(frame, persist=True, verbose=False)
 
                 if result[0] is not None and result[0].boxes.id is not None:
@@ -76,6 +93,7 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                     class_ids = boxes.cls.int().cpu().tolist()
                     confs = boxes.conf.cpu().tolist()
 
+
                     for box, track_id, class_id, conf in zip(xyxy, ids, class_ids, confs):
                         class_name = model.names[class_id]
 
@@ -84,22 +102,32 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                             continue
 
                         x1, y1, x2, y2 = map(int, box)
-                        obj_x = int((x1 + x2) / 2)  # centro X do bounding box
-                        obj_y = int((y1 + y2) / 2)  # centro Y do bounding box
+                        obj_x, obj_y = (x1 + x2) // 2, (y1 + y2) // 2
 
                         # ✅ verifica se o ponto central está dentro da área (ou toda a janela)
                         inside_area = mask[obj_y, obj_x] > 0  # > 0 porque a máscara tem 255 em zonas válidas
 
                         if conf >= CONF_THRESHOLD and inside_area and track_id not in tracked_ids:
+                            flag_new_detections = True
                             tracked_ids.add(track_id)
                             sheep_count += 1
                             print(f"[{sheep_count}] Nova ovelha ID {track_id} | Confiança: {conf:.2f}")
+                            #
+                            # new_detections.append({
+                            #     "sheep_id": int(track_id),
+                            #     "count_num": sheep_count,
+                            #     "confidence": float(conf),
+                            #     "b_box": [x1, y1, x2, y2],
+                            #     "c_point": [obj_x, obj_y]
+                            # })
 
                         # ✅ desenha o retângulo e ID
                         color = (0, 255, 0) if track_id in tracked_ids else (255, 0, 0)
                         cv2.rectangle(annotated_frame, (x1, y1), (x2, y2), color, 2)
                         cv2.putText(annotated_frame, f"{class_name} #{track_id}",
                                     (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1)
+
+
 
             if SHOW_LOCAL:
                 # Mostrar frame localmente
@@ -112,7 +140,19 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
 
             # Enviar frame via WebSocket
             _, buffer = cv2.imencode(".jpg", annotated_frame)
+
             try:
+                if flag_new_detections:
+                    frame_data = {
+                        "type": "frame",
+                        "camera_id": shared_state["camera"],
+                        "timestamp": datetime.utcnow().isoformat(),
+                        "new_detections": flag_new_detections,
+                        "image": base64.b64encode(buffer).decode("utf-8")
+                    }
+                    flag_new_detections = False
+                    await websocket.send_text(json.dumps(frame_data))
+
                 await websocket.send_bytes(buffer.tobytes())
             except WebSocketDisconnect:
                 print("Cliente desconectou-se — encerrando stream.")
@@ -120,6 +160,7 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture, stop_ev
                 break
 
             # await asyncio.sleep(0.01)  # ~20 FPS
+            # await asyncio.sleep(1)  # ~20 FPS
 
     finally:
         capture.release()
@@ -155,9 +196,9 @@ async def websocket_endpoint(websocket: WebSocket):
 
             if msg_type == "video":
                 msg_params = message.get("params", {})
-                msg_camera = msg_params.get("camera")
-                msg_detect = msg_params.get("detect")
-                area_points = msg_params.get("area", [])
+                shared_state["camera"] = msg_params.get("camera")
+                shared_state["detect"] = msg_params.get("detect")
+                shared_state["area"] = msg_params.get("area", [])
 
                 if frame_task and not frame_task.done():
                     stop_event.set()
@@ -168,25 +209,25 @@ async def websocket_endpoint(websocket: WebSocket):
                     capture.release()
 
                 try:
-                    cam_index = int(msg_camera)
+                    cam_index = int(shared_state["camera"])
                     capture = cv2.VideoCapture(cam_index)
                     print(f"A usar câmara: {cam_index}")
                 except (ValueError, TypeError):
-                    capture = cv2.VideoCapture(msg_camera)
-                    print(f"A reproduzir vídeo: {msg_camera}")
+                    capture = cv2.VideoCapture(shared_state["camera"])
+                    print(f"A reproduzir vídeo: {shared_state["camera"]}")
 
                 if not capture.isOpened():
-                    await websocket.send_text(json.dumps({"error": f"Não foi possível abrir {msg_camera}"}))
+                    await websocket.send_text(json.dumps({"error": f"Não foi possível abrir {shared_state["camera"]}"}))
                     continue
 
                 await websocket.send_text(json.dumps({
                     "type": msg_type,
-                    "camera": msg_camera,
-                    "area": area_points
+                    "camera": shared_state["camera"],
+                    "area": shared_state["area"],
                 }))
 
                 frame_task = asyncio.create_task(
-                    stream_frames(websocket, capture, stop_event, area_points, msg_detect)
+                    stream_frames(websocket, capture, stop_event, shared_state)
                 )
 
             elif msg_type == "stop":
