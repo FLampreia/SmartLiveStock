@@ -1,8 +1,0 @@
-resize:
-  width: 640
-  height: 480
-detection:
-  camera_path: '../tests/data/sheepHerd1.mp4'
-  model_path: 'models/yolo11s.pt'
-  conf_threshold: 0.88
-  class_type: 'sheep'
