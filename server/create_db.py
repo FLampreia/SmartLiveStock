@@ -1,17 +1,14 @@
 import sqlite3
 import os
-from dotenv import load_dotenv
 
-# Load .env variables
-load_dotenv("server/.env")
 DB_PATH = "smartlivestock.db"
 
 # Delete database if exists
 if os.path.exists(DB_PATH):
     os.remove(DB_PATH)
-    print("Base de dados apagada com sucesso.")
+    print("Base de dados recriada com sucesso.")
 else:
-    print("A base de dados não existe.")
+    print("A base de dados não existia.")
 
 # Connect/create database
 conn = sqlite3.connect(DB_PATH)
