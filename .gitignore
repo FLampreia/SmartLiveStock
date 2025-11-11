@@ -19,6 +19,6 @@ __pycache__/
 
 .idea/
 
-.env
+server/.env
 
-jetson_nano/src
+/server/smartlivestock.db
