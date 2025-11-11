@@ -44,24 +44,6 @@ cursor.executemany(
 )
 print("Roles criadas com sucesso.")
 
-#TODO
-# Role	Descrição	Exemplos de Permissões
-# Admin
-#   Responsável máximo pela gestão do sistema. Pode criar e apagar utilizadores, configurar câmaras, ver estatísticas e alterar parâmetros globais.	- Gerir utilizadores
-#       - Configurar câmaras
-#       - Consultar relatórios e histórico
-#       - Exportar dados
-#       - Aceder a modo “Auditoria” (exclusivo com Viewer)
-#   Operator	Responsável pela operação diária — monitoriza a contagem e ajusta parâmetros técnicos, mas sem acesso à gestão de utilizadores nem relatórios sensíveis.	- Iniciar/parar contagem
-#       - Definir área de contagem
-#       - Gerir sessões ativas
-#       - Ver contagem em tempo real
-#   Viewer	Papel de consulta. Pode visualizar resultados, relatórios e estatísticas, mas não pode alterar nada.	- Consultar estatísticas
-#       - Ver transmissões em tempo real
-#       - Exportar relatórios
-#       - Aceder a modo “Auditoria” (exclusivo com Admin)
-
-
 #=================================
 # Associar roles aos utilizadores
 #=================================

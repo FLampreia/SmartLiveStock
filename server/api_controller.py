@@ -1,19 +1,25 @@
-from fastapi import FastAPI, HTTPException, Depends, status
+from fastapi import FastAPI, HTTPException, Depends, status, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 import os
 from dotenv import load_dotenv
-from .auth import verify_password, create_access_token, decode_access_token
+from .auth import create_access_token, decode_access_token
 from .database_handler import authenticate_user, get_user_roles
+import json
+import asyncio
+import websockets
+
 
 load_dotenv("server/.env")
 
+JETSON_WS_URL = os.getenv("JETSON_WS_URL")
+
 # Configuração CORS
-origins = os.getenv("FRONTEND_ORIGINS", "").split(",")
+ORIGINS = os.getenv("FRONTEND_ORIGINS", "").split(",")
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=origins,
+    allow_origins=ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -26,38 +32,6 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 @app.get("/")
 def root():
     return {"Hello": "World SmartLiveStock!"}
-
-# Função para autenticar utilizador na base de dados
-# def authenticate_user(username: str, password: str):
-#     conn = sqlite3.connect(DB_PATH)
-#     cursor = conn.cursor()
-#     cursor.execute("SELECT username, password FROM users WHERE username=?", (username,))
-#     user = cursor.fetchone()
-#     conn.close()
-#     if not user:
-#         return False
-#     db_username, db_password = user
-#     if not verify_password(password, db_password):
-#         return False
-#     return {"username": db_username}
-
-
-# def get_user_roles(current_user: str):
-#     conn = sqlite3.connect(DB_PATH)
-#     print(DB_PATH, current_user)
-#     cursor = conn.cursor()
-#
-#     cursor.execute("""
-#     SELECT r.name
-#     FROM roles r
-#     JOIN userRoles ur ON ur.id_role = r.id
-#     JOIN users u ON ur.id_user = u.id
-#     WHERE u.username = ?
-#     """, (current_user,))
-#
-#     roles = [row[0] for row in cursor.fetchall()]
-#     conn.close()
-#     return roles
 
 # Endpoint de login para gerar token
 @app.post("/login")
@@ -83,7 +57,20 @@ def get_current_user(token: str = Depends(oauth2_scheme)):
         )
     return payload["sub"]
 
-# Exemplo de rota protegida
+
 @app.get("/protected")
 def protected_route(current_user: str = Depends(get_current_user)):
     return {"message": f"Hello {current_user}, with roles {get_user_roles(current_user)}, you have access!"}
+
+@app.post("/conn_jetson")
+async def connect_jetson(current_user: str = Depends(get_current_user)):
+    """
+    Testa se é possível conectar ao WebSocket da Jetson.
+    Não envia nenhuma mensagem, apenas verifica se a conexão pode ser aberta.
+    """
+    try:
+        async with websockets.connect(JETSON_WS_URL+"/ws") as websocket:
+            # Conexão aberta com sucesso
+            return {"status": "connected"}
+    except Exception as e:
+        return {"status": "error", "detail": str(e)}

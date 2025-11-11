@@ -27,7 +27,6 @@ def authenticate_user(username: str, password: str):
 
 def get_user_roles(current_user: str):
     conn = sqlite3.connect(DB_PATH)
-    print(DB_PATH, current_user)
     cursor = conn.cursor()
 
     cursor.execute("""
