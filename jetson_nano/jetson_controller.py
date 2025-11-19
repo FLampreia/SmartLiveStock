@@ -186,10 +186,10 @@ async def stream_frames(websocket: WebSocket, capture: cv2.VideoCapture,
 # ==============================================================
 # WebSocket Endpoint
 # ==============================================================
-@app.websocket("/ws")
+@app.websocket("/jetson_ws")
 async def websocket_endpoint(websocket: WebSocket):
     await websocket.accept()
-    print("Cliente WebSocket conectado.")
+    print("Cliente conectado à jetson.")
     capture = None
     stop_event = asyncio.Event()
     frame_task = None
@@ -243,6 +243,9 @@ async def websocket_endpoint(websocket: WebSocket):
                 frame_task = asyncio.create_task(
                     stream_frames(websocket, capture, stop_event, shared_state)
                 )
+
+            elif msg_type == "teste":
+                await websocket.send_text(json.dumps({"status": "Jetson esta a responder"}))
 
             elif msg_type == "stop":
                 stop_event.set()
