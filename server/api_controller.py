@@ -50,7 +50,7 @@ def protected_route(current_user: str = Depends(get_current_user)):
 
 @app.websocket("/server_ws")
 async def ws_endpoint(websocket: WebSocket):
-    token_header = websocket.headers.get("authorization")
+    token_header = websocket.headers.get("Authorization")
     if not token_header or not token_header.startswith("Bearer "):
         await websocket.close(code=4401)
         return
