@@ -58,7 +58,6 @@ CREATE TABLE IF NOT EXISTS cameras (
 )
 """)
 
-# TODO adicionar  foreign key area
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS counts (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
