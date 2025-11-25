@@ -80,9 +80,32 @@ async def ws_endpoint(websocket: WebSocket):
 
             if msg_type == "video":
                 roles = get_user_roles(current_user)
+
+                # enviar status ao browser
                 await websocket.send_text(json.dumps({
                     "status": f"a mostrar video ao {current_user} com roles {roles}"
+
                 }))
+
+                print(jetson_ws)
+
+                # enviar comando para a Jetson iniciar video
+                if jetson_ws is not None:
+                    try:
+                        await jetson_ws.send(json.dumps(
+                            {
+                                "type": "video",
+                                "params":
+                                    {"detect": "true",
+                                     "camera": "tests/data/sheepHerd1.mp4",
+                                     "area": [
+                                     ]
+                                }
+                            }))
+                    except Exception as e:
+                        print("Erro ao enviar comando de vídeo para Jetson:", e)
+                        await websocket.send_text(json.dumps({"status": "erro_enviar_comando_jetson"}))
+
 
             elif msg_type == "jetson":
                 msg_command = message.get("command")
